@@ -1,0 +1,644 @@
+---
+title: "Project"
+author: "Blake Freeman"
+date: "4/15/2020"
+output: html_document
+---
+  In a effort to create the best model for predicting Attrition and Salary, I used one hot encoding, corrlation matrix's, KNN and linear regression. The code below shows my thought process and what I did to get these results.  
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+Attrition_df <- read.csv("C:/Users/blake/Desktop/Case Study 2/Case Study 2/CaseStudy2-data.csv", header = TRUE)
+head(Attrition_df)
+
+Attrition_df_test <- read.csv("C:/Users/blake/Desktop/Case Study 2/Case Study 2/CaseStudy2CompSet No Attrition.csv", header = TRUE)
+
+Salary_df_test <- read.csv("C:/Users/blake/Desktop/Case Study 2/Case Study 2/CaseStudy2CompSet_No_Salary.csv", header = TRUE)
+
+head(Attrition_df)
+head(Attrition_df_test)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+library(ggplot2)
+ggplot(Attrition_df, aes(x=Age, fill= Attrition)) + geom_histogram() + facet_wrap(~Attrition)
+```
+```{r}
+ggplot(Attrition_df, aes(x = Gender, y = Age))+
+  geom_bar(
+    aes(fill = BusinessTravel), stat = "identity", color = "white",
+    position = position_dodge(0.9)
+    )+
+  facet_wrap(~Attrition)
+
+```
+
+```{r}
+ggplot(Attrition_df, aes(x=JobLevel, fill= Attrition)) + geom_histogram()
+```
+
+```{r}
+ggplot(Attrition_df, aes(x=JobInvolvement, fill= Attrition)) + geom_histogram()
+```
+
+
+```{r}
+ggplot(Attrition_df,aes(MaritalStatus, fill= Attrition)) + geom_bar()+ facet_wrap(~Attrition)
+```
+
+```{r}
+ggplot(Attrition_df,aes(Department, fill= Attrition)) + geom_bar()+ facet_wrap(~Attrition)
+```
+
+
+```{r}
+ggplot(Attrition_df,aes(Over18, fill= Attrition)) + geom_bar()
+```
+
+#Encoded all the values to be able to get a more clear picture when doing a analyisis. 
+#Also turning Attrition into a bollien value where 1 is true for Attrition. 
+```{r}
+Attrition_df_he <- Attrition_df
+
+for(unique_value in unique(Attrition_df_he$BusinessTravel)){
+ 
+
+Attrition_df_he[paste("BusinessTravel", unique_value, sep = ".")] <- ifelse(Attrition_df_he$BusinessTravel == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Attrition_df_he$Department)){
+ 
+
+Attrition_df_he[paste("Department", unique_value, sep = ".")] <- ifelse(Attrition_df_he$Department == unique_value, 1, 0)
+
+}
+
+
+for(unique_value in unique(Attrition_df_he$EducationField)){
+ 
+
+Attrition_df_he[paste("EducationField", unique_value, sep = ".")] <- ifelse(Attrition_df_he$EducationField == unique_value, 1, 0)
+
+}
+
+
+for(unique_value in unique(Attrition_df_he$Gender)){
+ 
+
+Attrition_df_he[paste("Gender", unique_value, sep = ".")] <- ifelse(Attrition_df_he$Gender == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Attrition_df_he$JobRole)){
+ 
+
+Attrition_df_he[paste("JobRole", unique_value, sep = ".")] <- ifelse(Attrition_df_he$JobRole == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Attrition_df_he$Over18)){
+ 
+
+Attrition_df_he[paste("Over18", unique_value, sep = ".")] <- ifelse(Attrition_df_he$Over18 == unique_value, 1, 0)
+
+}
+
+
+for(unique_value in unique(Attrition_df_he$OverTime)){
+ 
+
+Attrition_df_he[paste("OverTime", unique_value, sep = ".")] <- ifelse(Attrition_df_he$OverTime == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Attrition_df_he$Attrition)){
+ 
+
+Attrition_df_he[paste("Attrition", unique_value, sep = ".")] <- ifelse(Attrition_df_he$Attrition == unique_value, 1, 0)
+
+}
+
+
+```
+#One hot encoding of the Attrtion Test
+```{r}
+Attrition_df_test_he <- Attrition_df_test
+
+for(unique_value in unique(Attrition_df_test_he$BusinessTravel)){
+ 
+
+Attrition_df_test_he[paste("BusinessTravel", unique_value, sep = ".")] <- ifelse(Attrition_df_test_he$BusinessTravel == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Attrition_df_test_he$Department)){
+ 
+
+Attrition_df_test_he[paste("Department", unique_value, sep = ".")] <- ifelse(Attrition_df_test_he$Department == unique_value, 1, 0)
+
+}
+
+
+for(unique_value in unique(Attrition_df_test_he$EducationField)){
+ 
+
+Attrition_df_test_he[paste("EducationField", unique_value, sep = ".")] <- ifelse(Attrition_df_test_he$EducationField == unique_value, 1, 0)
+
+}
+
+
+for(unique_value in unique(Attrition_df_test_he$Gender)){
+ 
+
+Attrition_df_test_he[paste("Gender", unique_value, sep = ".")] <- ifelse(Attrition_df_test_he$Gender == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Attrition_df_test_he$JobRole)){
+ 
+
+Attrition_df_test_he[paste("JobRole", unique_value, sep = ".")] <- ifelse(Attrition_df_test_he$JobRole == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Attrition_df_test_he$Over18)){
+ 
+
+Attrition_df_test_he[paste("Over18", unique_value, sep = ".")] <- ifelse(Attrition_df_test_he$Over18 == unique_value, 1, 0)
+
+}
+
+
+for(unique_value in unique(Attrition_df_test_he$OverTime)){
+ 
+
+Attrition_df_test_he[paste("OverTime", unique_value, sep = ".")] <- ifelse(Attrition_df_test_he$OverTime == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Attrition_df_test_he$Attrition)){
+ 
+
+Attrition_df_test_he[paste("Attrition", unique_value, sep = ".")] <- ifelse(Attrition_df_test_he$Attrition == unique_value, 1, 0)
+
+}
+
+head(Attrition_df_test_he)
+```
+
+
+
+```{r}
+Attrition_df_he.m <- as.matrix(Attrition_df_he)
+
+```
+
+```{r}
+is.na(Attrition_df_he)
+apply(is.na(Attrition_df_he), 2, which)
+```
+#droping the variables I hot encoded and then any boolen values. 
+```{r}
+drops <- c("Attrition","BusinessTravel","Department","EducationField","Gender","JobRole","Over18","OverTime", "MaritalStatus","ID","EmployeeCount","Over18.Y","StandardHours","Attrition.No","OverTime.Yes","Gender.Female")
+
+Attrition_df_he <- Attrition_df_he[ , !(names(Attrition_df_he) %in% drops)]
+
+
+head(Attrition_df_he)
+
+```
+
+
+
+
+```{r}
+
+library("Hmisc")
+Attrition_df_he.corr <- rcorr(as.matrix(Attrition_df_he))
+
+```
+
+
+
+```{r}
+
+Attrition_df_he.P <- as.data.frame(t(Attrition_df_he.corr$P))
+
+Attrition_df_he.P
+
+```
+Age 
+DistanceFromHome
+JobInvolvement
+JobLevel
+JobSatisfaction
+MonthlyIncome
+StockOptionLevel
+TotalWorkingYears
+WorkLifeBalance
+YearsAtCompany
+YearsInCurrentRole
+Department.Sales
+Department.Research & Development
+JobRole.Research Director
+JobRole.Manufacturing Director
+JobRole.Sales Representaitive
+OverTime.No
+# Corrlation Matrix
+```{r,fig.width=35,fig.height=20}
+library(corrplot)
+corrplot(Attrition_df_he.corr$r, type="upper",  
+         p.mat = Attrition_df_he.corr$P, sig.level = 0.05, insig = "blank")
+```
+
+```{r}
+Attrition_df_he.corr_df <- as.data.frame(t(Attrition_df_he.corr$P))
+Attrition_df_he.corr_df
+
+write.csv(Attrition_df_he.corr_df,"C:/Users/blake/Desktop/Case Study 2/Case Study 2/Attrition_corr.csv", row.names = FALSE)
+```
+
+
+#Variables I am keeping for Attrition
+```{r}
+Keep <- c("Attrition.Yes",
+"Age", 
+"DistanceFromHome",
+"JobInvolvement",
+"JobLevel",
+"JobSatisfaction",
+"MonthlyIncome",
+"StockOptionLevel",
+"TotalWorkingYears",
+"WorkLifeBalance",
+"YearsAtCompany",
+"YearsInCurrentRole",
+"Department.Sales",
+"Department.Research & Development",
+"JobRole.Research Director",
+"JobRole.Manufacturing Director",
+"JobRole.Sales Representaitive",
+"OverTime.No"
+)
+
+
+Attrition_df_he <- Attrition_df_he[ , (names(Attrition_df_he) %in% Keep)]
+Attrition_df_he
+```
+
+#Variables I am keeping for Attrition 
+```{r}
+Keep <- c("Attrition.Yes",
+"Age", 
+"DistanceFromHome",
+"JobInvolvement",
+"JobLevel",
+"JobSatisfaction",
+"MonthlyIncome",
+"StockOptionLevel",
+"TotalWorkingYears",
+"WorkLifeBalance",
+"YearsAtCompany",
+"YearsInCurrentRole",
+"Department.Sales",
+"Department.Research & Development",
+"JobRole.Research Director",
+"JobRole.Manufacturing Director",
+"JobRole.Sales Representaitive",
+"OverTime.No"
+)
+
+
+Attrition_df_test_he <- Attrition_df_test_he[ , (names(Attrition_df_test_he) %in% Keep)]
+Attrition_df_test_he
+```
+
+
+#Corrlation Matrix for Attrition
+```{r width=35,fig.height=20}
+Attrition_df_he.corr2 <- rcorr(as.matrix(Attrition_df_he))
+
+
+corrplot(Attrition_df_he.corr2$r, type="upper",  
+         p.mat = Attrition_df_he.corr2$P, sig.level = 0.05, insig = "blank")
+```
+
+```{r}
+Attrition_df_he.corr2
+```
+
+
+#KNN to test best accuarcy 
+```{r}
+library(tidyverse)
+library(class)
+library(caret)
+library(e1071)
+library(ggplot2)
+```
+```{r}
+set.seed(500)
+iterations = 100
+numks = 60
+splitPerc = .70
+
+masterAcc = matrix(nrow = iterations, ncol = numks)
+
+for(j in 1:iterations)
+{
+   trainIndices = sample(1:dim(Attrition_df_he)[1],round(splitPerc * dim(Attrition_df_he)[1]))
+    train = Attrition_df_he[trainIndices,]
+    test = Attrition_df_he[-trainIndices,]
+  for(i in 1:numks)
+  {
+    classifications = knn(train[,c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)],test[,c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)],train$Attrition.Yes, prob = TRUE, k = i)
+    u <- union(classifications,test$Attrition.Yes)
+    t <- table(factor(classifications, u), factor(test$Attrition.Yes, u))
+    CM = confusionMatrix(t)
+    masterAcc[j,i] = CM$overall[1]
+  }
+  
+}
+
+MeanAcc = colMeans(masterAcc)
+
+plot(seq(1,numks,1),MeanAcc, type = "l")
+
+which.max(MeanAcc)
+max(MeanAcc)
+```
+
+
+#KNN model for Attrition
+```{r}
+Attrition_pred <- knn(train[,c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)],Attrition_df_test_he[,c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)],cl= train$Attrition.Yes, k = 36)
+Attrition_pred_df <- as.data.frame(Attrition_pred)
+Attrition_pred_df
+
+```
+```{r}
+
+Attrition_pred_df$Attrition <- "No"
+Attrition_pred_df$Attrition[Attrition_pred_df$Attrition_pred >1] <- "Yes"
+Attrition_pred_df
+```
+#One Hot accoding for Salary
+```{r}
+Salary <- Attrition_df
+
+for(unique_value in unique(Salary$BusinessTravel)){
+ 
+
+Salary[paste("BusinessTravel", unique_value, sep = ".")] <- ifelse(Salary$BusinessTravel == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Salary$Department)){
+ 
+
+Salary[paste("Department", unique_value, sep = ".")] <- ifelse(Salary$Department == unique_value, 1, 0)
+
+}
+
+
+for(unique_value in unique(Salary$EducationField)){
+ 
+
+Salary[paste("EducationField", unique_value, sep = ".")] <- ifelse(Salary$EducationField == unique_value, 1, 0)
+
+}
+
+
+for(unique_value in unique(Salary$Gender)){
+ 
+
+Salary[paste("Gender", unique_value, sep = ".")] <- ifelse(Salary$Gender == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Salary$JobRole)){
+ 
+
+Salary[paste("JobRole", unique_value, sep = ".")] <- ifelse(Salary$JobRole == unique_value, 1, 0)
+
+}
+
+
+
+
+for(unique_value in unique(Salary$OverTime)){
+ 
+
+Salary[paste("OverTime", unique_value, sep = ".")] <- ifelse(Salary$OverTime == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Salary$Attrition)){
+ 
+
+Salary[paste("Attrition", unique_value, sep = ".")] <- ifelse(Salary$Attrition == unique_value, 1, 0)
+
+}
+
+
+drops <- c("Attrition","BusinessTravel","Department","EducationField","Gender","JobRole","Over18","OverTime", "MaritalStatus","ID","EmployeeCount","Over18.Y","StandardHours","Attrition.No","OverTime.Yes","Gender.Female")
+
+Salary <- Salary[ , !(names(Salary) %in% drops)]
+
+
+head(Salary)
+
+```
+#Corrlation Matrix for Salary
+```{r}
+Salary.corr <- rcorr(as.matrix(Salary))
+
+Salary.corr.P <- as.data.frame(t(Salary.corr$P))
+
+Salary.corr.P 
+
+```
+"TotalWorkingYears",
+"YearsAtCompany",
+"YearsInCurrentRole",
+"YearsSinceLastPromotion",
+"YearsWithCurrManager",
+"JobRole.Research Director",
+"JobRole.Manufacturing Director",
+"JobRole.Research Scientist",
+"JobRole.Sales Representative",
+"JobRole.Healthcare Representative",
+"JobRole.Manager",
+"JobRole.Human Resources",
+"JobRole.Laboratory Technician",
+"Attrition.Yes",
+
+#Variables I am keeping
+```{r width=35,fig.height=20}
+Keep <- c("TotalWorkingYears",
+"YearsAtCompany",
+"YearsWithCurrManager",
+"JobRole.Research Director",
+"JobRole.Manufacturing Director",
+"JobRole.Research Scientist",
+"JobRole.Sales Representative",
+"JobRole.Manager",
+"JobRole.Human Resources",
+"JobRole.Laboratory Technician",
+"MonthlyIncome"
+
+)
+
+
+Salary <- Salary[ , (names(Salary) %in% Keep)]
+
+Salary.corr <- rcorr(as.matrix(Salary))
+
+
+corrplot(Salary.corr$r, type="upper",  
+         p.mat = Salary$P, sig.level = 0.05, insig = "blank")
+```
+
+
+#one Hot encoding Salary df
+```{r}
+Salary_test <- Salary_df_test
+
+for(unique_value in unique(Salary_test$BusinessTravel)){
+ 
+
+Salary_test[paste("BusinessTravel", unique_value, sep = ".")] <- ifelse(Salary_test$BusinessTravel == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Salary_test$Department)){
+ 
+
+Salary_test[paste("Department", unique_value, sep = ".")] <- ifelse(Salary_test$Department == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Salary_test$EducationField)){
+ 
+
+Salary_test[paste("EducationField", unique_value, sep = ".")] <- ifelse(Salary_test$EducationField == unique_value, 1, 0)
+
+}
+
+
+for(unique_value in unique(Salary_test$Gender)){
+ 
+
+Salary_test[paste("Gender", unique_value, sep = ".")] <- ifelse(Salary_test$Gender == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Salary_test$JobRole)){
+ 
+
+Salary_test[paste("JobRole", unique_value, sep = ".")] <- ifelse(Salary_test$JobRole == unique_value, 1, 0)
+
+}
+
+
+
+
+for(unique_value in unique(Salary_test$OverTime)){
+ 
+
+Salary_test[paste("OverTime", unique_value, sep = ".")] <- ifelse(Salary_test$OverTime == unique_value, 1, 0)
+
+}
+
+for(unique_value in unique(Salary_test$Attrition)){
+ 
+
+Salary_test[paste("Attrition", unique_value, sep = ".")] <- ifelse(Salary_test$Attrition == unique_value, 1, 0)
+
+}
+
+Keep <- c("TotalWorkingYears",
+"YearsAtCompany",
+
+
+"YearsWithCurrManager",
+"JobRole.Research Director",
+"JobRole.Manufacturing Director",
+"JobRole.Research Scientist",
+"JobRole.Sales Representative",
+
+"JobRole.Manager",
+"JobRole.Human Resources",
+"JobRole.Laboratory Technician"
+
+)
+
+Salary_test <- Salary_test[ , (names(Salary_test) %in% Keep)]
+
+
+head(Salary_test)
+```
+```{r}
+Salary_df_test
+```
+#Linear Regression Model for Salary
+```{r}
+library(dvmisc)
+library(Metrics)
+
+set.seed(100)
+
+train <- createDataPartition(Salary$MonthlyIncome, p=0.95, list=FALSE)
+training <- Salary[ train, ]
+test <- Salary[-train,]
+
+
+Model1_fit = lm(MonthlyIncome ~ ., data = training)
+
+sm <- summary(Model1_fit)
+
+
+MSE <- get_mse(Model1_fit, var.estimate = FALSE)
+
+
+predictions_model = predict(Model1_fit,test)
+predictions = predict(Model1_fit,Salary_test)
+
+
+predictions_df <- as.data.frame(predictions)
+predictions_df
+sm
+rmse(training$MonthlyIncome, predictions_model)
+
+```
+#Adding the Predtions to the Test Sets for output. 
+```{r}
+Attrition_predtions <- cbind(Attrition_df_test,Attrition_pred_df$Attrition)
+
+Salary_predtions <- cbind(Salary_df_test,predictions_df$predictions)
+
+names(Attrition_predtions)[names(Attrition_predtions) == "Attrition_pred_df$Attrition"] <- "Predicted Attrition"
+names(Salary_predtions)[names(Salary_predtions) == "predictions_df$predictions"] <- "Predicted Monthly Income"
+
+
+head(Attrition_predtions)
+head(Salary_predtions)
+
+
+write.csv(Attrition_predtions,"C:/Users/blake/Desktop/Case Study 2/CaseStudy2DDS-/Case2Predictions Blake Freeman Attrition.csv", row.names = FALSE)
+
+write.csv(Salary_predtions,"C:/Users/blake/Desktop/Case Study 2/CaseStudy2DDS-/Case2Predictions Blake Freeman Salary.csv", row.names = FALSE)
+```
+
